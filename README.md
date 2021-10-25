@@ -4,16 +4,21 @@ The first project of SI 618 2021FA at University of Michigan School of Informati
 ## Motivation
 This project aims to figure out the relationship between the educational expenditures and the average household income in different states in the United States. Generally speaking, richer areas with high household income can spend more on education because they have more extra money addtion to satisfying the living needs. Besides, the people with higher household income usually have higher education levels, which might also promote their governments to spend more on education.
 On the other hand, conversely speaking, it is also believed that higher investment in education leads to a higher education level, and thus results in higher income. Hence, if a government wants to increase people’s income and living standard, it may consider increasing the educational expenditures. However, does that work for every county or state? Are there some cases where the governments invest similar amount of capital but have different results? This is a key problem to research on which would help the government review the education spending plans and do some improvement.
+This project mainly seeks to research on the following three questions:
+1. Does states with higher household income tend to invest more money on education?
+2. Does education investment result in high household income?
+3. For the state with high education investment but low household income, inspect the previous two questions on the level of counties. What counties mainly cause that result? What might be the potential root reasons?
 
 ## Data Sources
 I use two datasets in this project.
 ### US Educational Finances
-The first dataset contains the educational revenues and expenditures of the elementary and high schools in different school districts of different states from 1992 to 2016. The data are available on Kaggle: [U.S. Educational Finances](https://www.kaggle.com/noriuk/us-educational-finances)
+The first dataset contains the educational revenues and expenditures of the elementary and high schools in different school districts of different states from 1992 to 2016. The data are available on Kaggle: [U.S. Educational Finances](https://www.kaggle.com/noriuk/us-educational-finances) and are in `csv` format.
 
 ### US Household Income Statistics
-The second dataset contains the statistics (including mean, median,standard deviation, etc.) of US household income in different counties of different states. The data are captured in 2017 and available on Kaggle: [US Household Income Statistics](https://www.kaggle.com/goldenoakresearch/us-household-income-stats-geo-locations)
+The second dataset contains the statistics (including mean, median,standard deviation, etc.) of US household income in different counties of different states. The statistics are all averages from 2011 to 2015. The data are captured in 2017 and available on Kaggle: [US Household Income Statistics](https://www.kaggle.com/goldenoakresearch/us-household-income-stats-geo-locations) and are in `csv` format.
 
 ## Data Manipulation
+Fortunately, after retrieving all the useful data, none of them contains incomplete or missing fields.
 ### Step 1: Filter out useful data from the two raw datasets
 I load the two raw datasets into SparkSQL and filter out useful information with SparkSQL. I use the names of states, school districts and the total expenditure of each states from the US Educational Finances dataset. Besides that, I also compute the average annual increase rate of the total expenditure of each states, which is done by the following query. 
 ```sql
@@ -53,7 +58,7 @@ To answer this question, I need to find how does the educational expenditure var
 
 ![Figure 1](/Problem1.jpeg "Figure 1. 2016Expenditures vs. householdIncome")
 
-From the above figure we can notice that there is a small but clear positive trend between these two variables. That means generally, we can say that higher household income results in higher educational expenditure. Besides, there are several outliers, like California, New York and Texas, which invest much more capital on education compared to other states. None of the three states, however, is in the highest income level. 
+From the above figure we can notice that there is a small but clear positive trend between these two variables. That means generally, we can say that higher household income results in higher educational expenditure. Besides, there are several outliers, like California, New York and Texas, which invest much more capital on education compared to other states. None of the three states, however, is in the highest income level. Though these three states "pull up" the overall regression line, we can still observe a slight positive relationship between these two variables.
 
 ### Problem 2: Does education investment result in high household income?
 To answer this question, I need to find the annual increase rate of the education expenditure of each states. Because different states have different population, social environment and history conditions, it is meaningless to compare the exact quantity of education expenditures. Hence, I compute the average annual increase rate of the education expenditure of each states as stated in the **Data Manipulation** section. I first compute the annual increase rates of each states from 1993 to 2016 and then I take the average of years. The statistic can be a normalized measurement of the expenditure investment of each states. Because the household income is the average income from 2011 to 2015, it is valuable to monitor the statistic range from 1993 to 2016--starting from about 20 years before 2011 and ending in about 2015. 20 years are also the length of time a normal person needed to grow up and finally obtain a bachelor degree. I plot a graph of **the median household income of all the counties of each states vs. the mean expenditure increase rate of each states**.
