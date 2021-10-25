@@ -1,0 +1,15 @@
+1. Does states with higher household income tend to invest more money on education?
+
+2. Does education investment result in high household income?
+
+3. For the state with high education investment but low household income, 
+
+
+
+
+
+
+limitation
+1. Not full household data, thus not include all counties
+2. Bias introduced by the matching techniques of counties and school districts
+3. School districts vary in different years
