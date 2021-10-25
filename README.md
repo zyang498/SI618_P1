@@ -22,7 +22,12 @@ Fortunately, after retrieving all the useful data, none of them contains incompl
 ### Step 1: Filter out useful data from the two raw datasets
 I load the two raw datasets into SparkSQL and filter out useful information with SparkSQL. I use the names of states, school districts and the total expenditure of each states from the US Educational Finances dataset. Besides that, I also compute the average annual increase rate of the total expenditure of each states, which is done by the following query. 
 ```sql
-select STATE, mean(expenditureIncreaseRate) as meanExpenditureIncreaseRate from (select STATE, (postExpenditure-preExpenditure)/preExpenditure as expenditureIncreaseRate, preYear, postYear from (select a.STATE, a.YEAR as preYear, b.YEAR as postYear, a.TOTAL_EXPENDITURE as preExpenditure, b.TOTAL_EXPENDITURE as postExpenditure from (select * from edu where YEAR < 2016) as a inner join (select * from edu where YEAR > 1992) as b where a.YEAR = b.YEAR-1 and a.STATE = b.STATE)) group by STATE order by STATE
+select STATE, mean(expenditureIncreaseRate) as meanExpenditureIncreaseRate from (select STATE, 
+(postExpenditure- preExpenditure)/preExpenditure as expenditureIncreaseRate, preYear, postYear 
+from (select a.STATE, a.YEAR as preYear, b.YEAR as postYear, a.TOTAL_EXPENDITURE as preExpenditure, 
+b.TOTAL_EXPENDITURE as postExpenditure from (select * from edu where YEAR < 2016) as a inner join 
+(select * from edu where YEAR > 1992) as b where a.YEAR = b.YEAR-1 and a.STATE = b.STATE)) 
+group by STATE order by STATE
 ```
 Basically it involves a self join of the orignal dataset to match the adjacent two years together so that I can compute the annual increase rate of the total expenditure.
 For the US Household Income Statistics dataset, I use the following query to extract the mean of median household income of each states.
@@ -49,19 +54,30 @@ I do in the above way because
 * The naming pattern of school districts in the US Educational Finances dataset is regular. It usually contains the name of the county, census area, borough, municipio, parish or municipality it is in.
 * There is no free, extratable dataset to map school districts to counties on the Internet. Even if there exists such dataset, it is also probable that the school districts are named differently.
 
-The above procedure is implemented by a MapReduce job in Spark similar to homework 5. It involves a cross join to map all the key-value pairs of the two datasets together into one `RDD` object. Then I use the `RDD.map()` function to realize the special reducing job.
+The above procedure is implemented by a MapReduce job in Spark similar to homework 5. It involves a cross join to map all the key-value pairs of the two datasets together into one `RDD` object. Then I use the `RDD.map()` function to realize the special reducing job. The code is as follows
+```python
+cat_1 = q7_rdd.flatMap(cat_q7)
+cat_2 = q8_rdd.flatMap(cat_q8).reduceByKey(lambda x, y: x+y)
+joined_rdd = cat_1.cartesian(cat_2).flatMap(join_county).map(lambda x: (x[0][0], x[0][1], x[0][2], 
+x[1][0], x[1][1]))
+```
+where the functions `cat_q7` and `cat_q8` reduce two datasets. After doing a cartesian product (the cross join) to the two reduced dataset, the `join_county` function reduce the resulting large dataset to match county and school districts together.
 
 ## Analysis and Visualization
 
 ### Problem 1: Does states with higher household income tend to invest more money on education?
-To answer this question, I need to find how does the educational expenditure vary on different amount of household income. As for the household income, I choose to use the median values to reduce the effect of extremely large or small values. Because the household income is the average from 2011 to 2015, I extract the educational expenditures in 2016. As a result, I draw a graph of **the total expenditures in 2016 of each state vs. the median household income of each states**.
+To answer this question, I need to find how does the educational expenditure vary on different amount of household income. As for the household income, I choose to use the median values to reduce the effect of extremely large or small values. Because the household income is the average from 2011 to 2015, I extract the educational expenditures in 2016. Then I join these two extracted tables by the following query
+```sql
+select * from incomeByState as a inner join eduByState2016 as b on a.state = b.STATE
+```
+As a result, I draw a graph of **the total expenditures in 2016 of each state vs. the median household income of each states**.
 
 ![Figure 1](/Problem1.jpeg "Figure 1. 2016Expenditures vs. householdIncome")
 
 From the above figure we can notice that there is a small but clear positive trend between these two variables. That means generally, we can say that higher household income results in higher educational expenditure. Besides, there are several outliers, like California, New York and Texas, which invest much more capital on education compared to other states. None of the three states, however, is in the highest income level. Though these three states "pull up" the overall regression line, we can still observe a slight positive relationship between these two variables.
 
 ### Problem 2: Does education investment result in high household income?
-To answer this question, I need to find the annual increase rate of the education expenditure of each states. Because different states have different population, social environment and history conditions, it is meaningless to compare the exact quantity of education expenditures. Hence, I compute the average annual increase rate of the education expenditure of each states as stated in the **Data Manipulation** section. I first compute the annual increase rates of each states from 1993 to 2016 and then I take the average of years. The statistic can be a normalized measurement of the expenditure investment of each states. Because the household income is the average income from 2011 to 2015, it is valuable to monitor the statistic range from 1993 to 2016--starting from about 20 years before 2011 and ending in about 2015. 20 years are also the length of time a normal person needed to grow up and finally obtain a bachelor degree. I plot a graph of **the median household income of all the counties of each states vs. the mean expenditure increase rate of each states**.
+To answer this question, I need to find the annual increase rate of the education expenditure of each states. Because different states have different population, social environment and history conditions, it is meaningless to compare the exact quantity of education expenditures. Hence, I compute the average annual increase rate of the education expenditure of each states as stated in the **Data Manipulation** section (detailed code is also included there). I first compute the annual increase rates of each states from 1993 to 2016 and then I take the average of years. The statistic can be a normalized measurement of the expenditure investment of each states. Because the household income is the average income from 2011 to 2015, it is valuable to monitor the statistic range from 1993 to 2016--starting from about 20 years before 2011 and ending in about 2015. 20 years are also the length of time a person needed to grow up and finally obtain a bachelor degree. I plot a graph of **the median household income of all the counties of each states vs. the mean expenditure increase rate of each states**.
 
 ![Figure 2](/Problem2_02.jpeg "Figure 2. householdIncome vs. meanExpenditureIncreaseRate")
 
@@ -74,7 +90,7 @@ We can find that without the effects of those five "outliers", the regression li
 
 ### Problem 3: For the state with high education investment but low household income, inspect the previous two questions on the level of counties. What counties mainly cause that result? What might be the potential root reasons?
 
-To answer this problem, I pick the most extreme case--Oklahoma among the five states specified in **Problem 2**. Oklahoma has the highest average annual education expenditure increase rate, but a significantly low level of household income. After joining the datasets on the county level as stated in the **Data Manipulation** section, I plot the two similar graphs as in **Problem 2** and **Problem 3**. The differences are that I compute all the statistics on the county level. They result in the two graphs below. The first one is of **the total expenditures in 2016 of each counties in Oklahoma vs. the median household income of each counties in Oklahoma**.
+To answer this problem, I pick the most extreme case--Oklahoma among the five states specified in **Problem 2**. Oklahoma has the highest average annual education expenditure increase rate, but a significantly low level of household income. After joining the datasets on the county level as stated in the **Data Manipulation** section (detailed code is also included there), I plot the two similar graphs as in **Problem 2** and **Problem 3**. The differences are that I compute all the statistics on the county level. They result in the two graphs below. The first one is of **the total expenditures in 2016 of each counties in Oklahoma vs. the median household income of each counties in Oklahoma**.
 
 ![Figure 4](/Problem3_01.jpeg "Figure 4. 2016ExpendituresOklahoma vs. householdIncomeOklahoma")
 
