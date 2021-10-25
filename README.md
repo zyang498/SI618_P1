@@ -44,7 +44,7 @@ I do in the above way because
 * The naming pattern of school districts in the US Educational Finances dataset is regular. It usually contains the name of the county, census area, borough, municipio, parish or municipality it is in.
 * There is no free, extratable dataset to map school districts to counties on the Internet. Even if there exists such dataset, it is also probable that the school districts are named differently.
 
-The above procedure is implemented by a MapReduce job in Spark similar to homework 5. It involves a cross join to map all the key-value pairs of the two datasets together. That makes the special reducing method possible.
+The above procedure is implemented by a MapReduce job in Spark similar to homework 5. It involves a cross join to map all the key-value pairs of the two datasets together into one `RDD` object. Then I use the `RDD.map()` function to realize the special reducing job.
 
 ## Analysis and Visualization
 
