@@ -93,20 +93,24 @@ select * from incomeByState as a inner join eduByState2016 as b on a.state = b.S
 ```
 As a result, I draw a graph of **the total expenditures in 2016 of each state vs. the median household income of each state**.
 
-![](./Problem1.jpeg)
+![](./P2_Problem1_01.png)
 
 From the above figure we can notice that there is a small but clear positive trend between these two variables. That means generally, we can say that higher household income results in higher educational expenditure. Besides, there are several outliers, like California, New York and Texas, which invest much more capital on education compared to other states. None of the three states, however, is in the highest income level. Though these three states "pull up" the overall regression line, we can still observe a slight positive relationship between these two variables.
+
+![](./P2_Problem1_02.png)
+
+![](./P2_Problem1_03.png)
 
 ### Problem 2: Does higher education investment in each state result in higher household income?
 To answer this question, I need to find the annual increase rate of the education expenditure of each state. Because different states have different populations, social environments and historical conditions, it is not meaningful to compare the exact quantity of their education expenditures. Hence, I compute the average annual increase rate of the education expenditure of each state as stated in the **Data Manipulation** section (detailed code is also included there). I first compute the annual increase rates of each state in each year between 1993 and 2016 and then take the average of them. The statistic can be a normalized measurement of the expenditure investment of each state. Because the household income is the average income from 2011 to 2015, it is valuable to monitor the statistics from 1993 to 2016--starting from about 20 years before 2011 and ending in about 2015. 20 years is also the length of time a person needs to grow up and finally obtain a bachelor degree. I plot a graph of **the median household income of all the counties of each state vs. the mean expenditure increase rate of each state**.
 
-![](./Problem2_02.jpeg)
+![](./P2_Problem2_01.png)
 
 From the above figure we can notice that there is a small but clear positive trend between these two variables. That means generally, we can say that the more a state increases its educational expenditure, the more the household income in the end. We can also see that the three states specified in **Problem 1**: California, New York and Texas, lie near the regression line and two of them lie above the regression line. That means the exact large quantity of expenditures at least does not result in low household income. 
 
 On the other hand, in the down-right corner of the graph, there are five states: Georgia, Kentucky, Oklahoma, Mississippi and Arkansas which focus on educational expenditures a lot, yet still resulting in a low income level. If I remove these five states, the graph changes into this:
 
-![](./Problem2_03.jpeg)
+![](./P2_Problem2_02.png)
 
 We can find that without the effects of those five "outliers", the regression line is remarkably "pulled up". This fact motivates me to research on **Problem 3** below.
  
@@ -115,17 +119,17 @@ We can find that without the effects of those five "outliers", the regression li
 To answer this problem, I pick the most extreme case--Oklahoma among the five states specified in **Problem 2**. Oklahoma has the highest average annual education expenditure increase rate, but a significantly low level of household income. After joining the datasets on the county level as stated in the **Data Manipulation** section (detailed code is also included there), I plot the two similar graphs as in **Problem 2** and **Problem 3**. The differences are that I compute all the statistics on the county level. They result in the two graphs below. The first one is of **the total expenditures in 2016 of each counties in Oklahoma vs. the median household income of each counties in Oklahoma**.
 
 
-![](./Problem3_01.jpeg)
+![](./P2_Problem3_01.png)
 
 From the first graph we can find two outliers. One is Comanche County, which is a rich region with extremely high household income. The other is Tulsa County, which has a normal household income but extremely high education expenditures. That may imply Tulsa County drags down the overall performance of Oklahoma.
  
 The second one is of **the median household income of each counties in Oklahoma vs. the mean expenditure increase rate of each counties in Oklahoma**.
 
-![](./Problem3_03.jpeg)
+![](./P2_Problem3_02.png)
 
 From the second graph we can notice that except Tulsa County, Creek County, Cleveland County, Seminole County and Coal County all have very high average annual increase rate of education expenditures, but still stay on a kind of median level of household income. Are they the origins which drag down the performance of the whole state? The answer is no, because after removing these five counties, the graph change into this:
 
-![](./Problem3_04.jpeg)
+![](./P2_Problem3_03.png)
 
 It is very surprising that the trend of the whole state is a negative relationship between these two variables, which means the more a county increases its educational expenditure, the less the household income in the end. This trend is completely opposite to the one in the state level across America. That means not the five counties specified above, but the whole state experiences something. 
  
