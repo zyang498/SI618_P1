@@ -1,11 +1,11 @@
-# Exploratory 
+# Explorary Analysis on the Methods for States with High Educational Investment and Low Household Income to Increase Household Income
 
 
 Zhe Yang
 
-October 25, 2021
+December 6, 2021
 
-SI 618, Project 1
+SI 618, Project 1 - Part 2
 
 
 ## Motivation
