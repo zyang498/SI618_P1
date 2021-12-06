@@ -9,150 +9,104 @@ SI 618, Project 1
 
 
 ## Motivation
-This project aims to figure out the relationship between the educational expenditures and the average household income in different states in the United States. Generally speaking, richer areas with high household income can spend more on education because they have more extra money addtion to satisfying the living needs. Besides, the people with higher household income usually have higher education levels, which might also promote their governments to spend more on education.
+This part of project is the addtional exploratory analysis of the previous analysis of part 1 on the relationship between educational expenditure and household income in the US. In part 1, I found that generally high increase rate in education expenditures would result in high household income for each state. However, there are states making efforts on increasing their education investment years by years but yet having relatively low household income. In this part of project, I would like to figure out what exactly these states are, what differences between them and those states with high household income in terms of detailed investment features and try to provide some suggestions for them to increase household income. It is important to make sure that government investment efficiently makes positive changes to people's livehood. It is depressing if government actually invest money but people's lives don't change a lot. In terms of educational expenditures, if some states can invest money to increase people's income, then other states can do it similarly. Fortunately, by exploring some detailed investment features provided by the US Educational Finances dataset, we can realize this purpose.
 
-On the other hand, conversely speaking, it is also believed that higher investment in education leads to a higher education level, and thus results in higher income. Hence, if a government wants to increase people’s income and living standard, it may consider increasing the educational expenditures. However, does that work for every county or state? Are there some cases where the governments invest similar amount of capital but have different results? This is a key problem to research on which would help the government review the education spending plans and do some improvement.
-
-This project mainly seeks to research on the following three questions:
-1. Do states with higher household income tend to invest more money on education?
-2. Does higher education investment in each state result in higher household income?
-3. For the state with high education investment but low household income, inspect the previous two questions on the level of counties. Which counties mainly cause that result? What might be the potential root reasons?
+This part of project mainly seeks to research on the following three questions:
+1. Are there any meaningful clusters among the states with different educational expenditure increase rate and household income?
+2. What are the differences between the detailed educational expenditures among these clusters?
+3. Given that some states need to increase their educational expenditures, is there a positive linear relationship between educational expenditures and revenues?
 
 ## Data Sources
 I use two datasets in this project.
 
 ### US Educational Finances
-The first dataset contains the educational revenues and expenditures of the elementary and high schools in different school districts of different states from 1992 to 2016. The data are available on Kaggle: [U.S. Educational Finances](https://www.kaggle.com/noriuk/us-educational-finances) and are in `csv` format.
+The first dataset contains the educational revenues and expenditures of the elementary and high schools in different school districts of different states from 1992 to 2016. It also has 10 features about educational fiances of each state, including the following.
+1. The number of students enrolled
+2. Total educational revenue
+3. Federal educational revenue
+4. State educational revenue
+5. Total educational expenditure
+6. Instruction educational expenditure
+7. Support service educational expenditure
+8. Other educational expenditure
+9. Capital outlay educational expenditure
+
+The data are available on Kaggle: [U.S. Educational Finances](https://www.kaggle.com/noriuk/us-educational-finances) and are in `csv` format.
 
 ### US Household Income Statistics
 The second dataset contains the statistics (including mean, median,standard deviation, etc.) of US household income in different counties of different states. The statistics are all averages from 2011 to 2015. The data are captured in 2017 and available on Kaggle: [US Household Income Statistics](https://www.kaggle.com/goldenoakresearch/us-household-income-stats-geo-locations) and are in `csv` format.
 
-## Data Manipulation
-Fortunately, after retrieving all the useful data, none of them contains incomplete or missing fields.
+## Methods
 
-### Step 1: Filter out useful data from the two raw datasets
-I load the two raw datasets into SparkSQL and filter out useful information with it. I use the names of states, school districts and the total expenditure of each state from the US Educational Finances dataset. Besides that, I also compute the average annual increase rate of the total expenditure of each state, which is done by the following query. 
-```sql
-select STATE, mean(expenditureIncreaseRate) as meanExpenditureIncreaseRate 
-from (select STATE, (postExpenditure- preExpenditure)/preExpenditure as 
-expenditureIncreaseRate, preYear, postYear from (select a.STATE, a.YEAR 
-as preYear, b.YEAR as postYear, a.TOTAL_EXPENDITURE as preExpenditure, 
-b.TOTAL_EXPENDITURE as postExpenditure from (select * from edu where 
-YEAR < 2016) as a inner join (select * from edu where YEAR > 1992) as b 
-where a.YEAR = b.YEAR-1 and a.STATE = b.STATE)) group by STATE order by STATE
-```
-Basically it involves a self join of the orignal dataset to match the adjacent two years together so that I can compute the annual increase rate of the total expenditure.
-For the US Household Income Statistics dataset, I use the following query to extract the mean of median household income of each state.
-```sql
-select State_name as state, mean(Median) as meanMedian from income 
-group by state order by state
-```
-It can be considered as a very simple MapReduce job. After all the filtering, I register the resulting Spark DataFrames to several Tables by `createOrReplaceTempView`.
+### Problem 1: Are there any meaningful clusters among the states with different educational expenditure increase rate and household income?
+For this question, I use the manupulated data from part 1 of the project, which join the household income together with the annual increase rate of educational expenditures from 1992 to 2016 of each state. I use SparkSQL to do a left join and then compute the annual increase rate. Please refer to the Problem 2 of my part 1 report for details. 
 
-### Step 2: Join the datasets on the state level
-It is convenient to join the datasets on the state level because they all have the "states" fields. I use `inner join` to join them in case that there are some places like Puerto Rico that only exist in one of them. one example query is:
-```sql
-select * from incomeByState as a inner join eduByState2016 as b on 
-a.state = b.STATE
-```
+### Problem 2: What are the differences between the detailed educational expenditures among these clusters?
+I only need to use the US Educational Finances dataset for this problem so there is no dataset join needed. There are NaN values in 1992 in the US Educational Finances dataset. Hence, I remove all of the NaN values by the ```df.dropna()``` function and the resulting dataset contains the data from 1993 to 2016. I then compute the medians of each feature of each state among these years and use them as average descriptions of the features. The reason why I use medians instead of means is that I want to eliminate the effect of extremely large or small values. As for noisy data, because these data are about each state so I think they are all valuable and none of the states should be regarded as "noisy" data. It is somehow chanllenging to copy the clusters in Problem 1 and use them here. I do an additional dataframe join using the ```df.join``` function to copy the cluters computed in Problem 1 to the dataset in Problem 2. I join them using states as keys.
 
-### Step 3: Join the datasets on the county level
-At the beginning, note that it is only valid to join datasets on the county level for a specified state, because there are same county names across different states. If someone joins the original two datasets directly on the county level, it would probably join couties from different states together. 
-
-The US Educational Finances dataset only has "school_district" field, while the US Household Income Statistics dataset has the accurate "county" field. To join the datasets on the county level, I do the following:
-
-1. Given a state, find all the names of counties in this state in the US Household Income Statistics dataset
-2. For each names of counties, find all the names of school districts in this state that contain the name of a county from the US Educational Finances dataset
-3. Map these school districts together with the county
-
-I do in the above way because 
-
-* The US Household Income Statistics dataset on Kaggle is only one part of the full dataset, as stated in their description. It takes about $8 to purchase the whole dataset. Hence, it does not contain the data of all counties.
-* The naming pattern of school districts in the US Educational Finances dataset is regular. It usually contains the name of the county, census area, borough, municipio, parish or municipality the school district is in.
-* There is no free, extractable dataset to map school districts to counties on the Internet. Even if there exists such a dataset, it is also probable that the school districts are named differently.
-
-The above procedure is implemented by a MapReduce job in Spark similar to homework 5. It involves a cross join to map all the key-value pairs of the two datasets together into one `RDD` object. Then I use the `RDD.map()` function to realize the special reducing job. The code is as follows
-```python
-cat_1 = q7_rdd.flatMap(cat_q7)
-cat_2 = q8_rdd.flatMap(cat_q8).reduceByKey(lambda x, y: x+y)
-joined_rdd = cat_1.cartesian(cat_2).flatMap(join_county).map(lambda x: 
-(x[0][0], x[0][1], x[0][2], x[1][0], x[1][1]))
-```
-where the functions `cat_q7` and `cat_q8` reduce two datasets. After doing a cartesian product (the cross join) to the two reduced dataset, the `join_county` function reduces the resulting large dataset to match county and school districts together.
-
-Here is a simple flowchart which shows the data manipulation process in the project.
-
-![](./Flowchart.jpg)
+### Problem 3: Given that some states need to increase their educational expenditures, is there a positive linear relationship between educational expenditures and revenues?
+Similar to Question 2, I only need to use the US Educational Finances dataset for this problem so there is no dataset join needed. I do the same to remove NaN values and join the cluters computed in Problem 1.
 
 ## Analysis and Results
 
-### Problem 1: Are there any meaningful clusters among the states with different educational expenditures and household income?
+### Problem 1: Are there any meaningful clusters among the states with different educational expenditure increase rate and household income?
 To answer this question, I want to perform a K means clustering algorithm. To do that, I first need to decide how many clusters I would use. I use the Elbow Method and the Silhouette Method. In the Silhouette Method, the average silhouette reaches its maximum when the number of clusters is 3. 
 
-![](./P2_Problem1_01.png)
-
-Also in the Elbow Method, after $k=3$ the decrease rate of within-cluster sum of squares drops significantly. 
-
 ![](./P2_Problem1_02.png)
+
+Also in the Elbow Method, after k=3 the decrease rate of within-cluster sum of squares drops significantly. 
+
+![](./P2_Problem1_01.png)
 
 Hence, I choose 3 clusters for the K means algorithm and perform it on the graph of **the median household income of all the counties of each state vs. the mean expenditure increase rate of each state** drawn in the part 1 of the project. The graph basically shows the normalized relationship between how much each state pays attention to education expenditure from 1992 to 2016 and the median household income of each state in 2015. Please refer to the report of part 1 for more details. 
 
 ![](./P2_Problem1_03.png)
 
-From the above figure we can notice that K means algorithm clusters the data basically based on the vertical axis, i.e. the mean median household income. States in cluster 1 have generally the highest household income. We can notice that they mostly have high mean expenditure increase rate. States in cluster 2 have relatively lower household income and lower mean expenditure increase rate. States in cluster 0 basically follow the same trend. After clustering, we can clearly find that the structure of these data points presents in a inverted triangle form, which suggests that if a state has high household income, it must have high expenditure increase rate; but if a state has high expenditure increase rate, it is not necessary to have high household income. It is very interesting to find such pattern. One probable cause of that may be that although states in cluster 0 make similar amount of efforts to invest in education, they spend the moneny on something different, or even something wrong. Hence, the next interesting question is what is the differences between the detailed educational expenditures among these three clusters.
+From the above figure we can notice that K means algorithm clusters the data basically based on the vertical axis, i.e. the mean median household income. States in cluster 1 have generally the highest household income. We can notice that they mostly have high mean expenditure increase rate. States in cluster 2 have relatively lower household income and lower mean expenditure increase rate. States in cluster 0 basically follow the same trend. After clustering, we can clearly find that the structure of these data points presents in a triangle form, which suggests that if a state has high household income, it must have high expenditure increase rate; but if a state has high expenditure increase rate, it is not necessary to have high household income. It is very interesting to find such pattern. One probable cause of that may be that although states in cluster 0 make similar amount of efforts to invest in education, they spend the moneny on something different, or even something wrong. Hence, the next interesting question is what is the differences between the detailed educational expenditures among these three clusters.
 
 
 
 
 
-### Problem 2: What is the differences between the detailed educational expenditures among these three clusters?
-To answer this question, I can depend on the 11 features provided in the US Educational Finances dataset, including the total educational expenditure, total educational revenue, number of students enrolled, etc. To reduce the dimension, I perform a PCA on these features and try to extract siginificant ones. The weight of 
+### Problem 2: What are the differences between the detailed educational expenditures among these three clusters?
+To answer this question, I can depend on the 11 features provided in the US Educational Finances dataset, including the total educational expenditure, total educational revenue, number of students enrolled, etc. I compute the median values of these 11 features from 1992 to 2016 of each state and use them as  To reduce the dimension, I perform a PCA on these features and try to extract siginificant ones. The weight of each principal component (PC) is given by the table below.
+
+![](./P2_Problem2_00.png)
+
+The "R" in the table means "Revenue" and the "E" means "Expenditure". For example, "FederalR" means "Federal Revenue". I also plot the explained variances of each PC as below.
+
+![](./P2_Problem2_0.png)
+
+We can find the first and second PCs explain most of the variances. Hence, I plot the data points in the three clusters in problem 1 in a graph whose horizontal axis is PC1 and vertical axis is PC2.
 
 ![](./P2_Problem2_01.png)
 
-From the above figure we can notice that there is a small but clear positive trend between these two variables. That means generally, we can say that the more a state increases its educational expenditure, the more the household income in the end. We can also see that the three states specified in **Problem 1**: California, New York and Texas, lie near the regression line and two of them lie above the regression line. That means the exact large quantity of expenditures at least does not result in low household income. 
-
-On the other hand, in the down-right corner of the graph, there are five states: Georgia, Kentucky, Oklahoma, Mississippi and Arkansas which focus on educational expenditures a lot, yet still resulting in a low income level. If I remove these five states, the graph changes into this:
+We can find that there are several points lying on the very right part of the graph. They make us unable to see the details in the group of points on the left side. Somehow I would regard them as sort of outliers so I limit the range of the horizontal axis and the graph becomes the following.
 
 ![](./P2_Problem2_02.png)
 
-We can find that without the effects of those five "outliers", the regression line is remarkably "pulled up". This fact motivates me to research on **Problem 3** below.
- 
-### Problem 3: For the state with high education investment but low household income, inspect the previous two questions on the level of counties. Which counties mainly cause that result? What might be the potential root reasons?
- 
-To answer this problem, I pick the most extreme case--Oklahoma among the five states specified in **Problem 2**. Oklahoma has the highest average annual education expenditure increase rate, but a significantly low level of household income. After joining the datasets on the county level as stated in the **Data Manipulation** section (detailed code is also included there), I plot the two similar graphs as in **Problem 2** and **Problem 3**. The differences are that I compute all the statistics on the county level. They result in the two graphs below. The first one is of **the total expenditures in 2016 of each counties in Oklahoma vs. the median household income of each counties in Oklahoma**.
+We can notice that the most differences between cluster 0 (the states with lowest household income) and cluster 1 (the states with highest household income) are presented on PC2. Data points in cluster 0 have lower PC2 while data points in cluster 1 have higher PC2. As PC1 goes higher the differences in terms of PC2 becomes bigger. Referring to the table with weights of each PC above, we can find that all weights are positive for PC1 and the "Total Revenue", "Local Revenue", "Total Expenditure", "Instruction Expenditure", "Support Service Expenditure" weights are positive for PC2. By analyzing these weights, we may find the detailed differences between cluster 0 and 1 and make some suggestions based on that to increase the household income for states in cluster 0.
 
+Firstly, states in cluster 0 have generally lower educational expenditures than those in cluster 1. That means although they may share similar increase rate of expenditures, they still have a difference in terms of the actual quanitity of expenditures which may cause the difference of household income. Maybe states in cluster 0 still need to increase their educational expenditure further to increase the household income. Secondly, the high weight on local revenue of PC2 suggests that the states in cluster 1 have much higher local revenue compared to those in cluster 0, which means the revenue of states in cluster 0 mostly go to the state and federal government. That probably means the educational revenues should be better kept by local counties to make additional investment to local education. It is probably a more efficiently way compared to handing them up to the state and federal government and wait for them to distribute additional expenditures back to local counties. Finally, the weights of instruction expenditures and support service expenditure are positive. That means the expenditures should mostly be spent on these two.
+
+Based on the first finding above, states in cluster 0 need to increase their expenditures additionally. However, does that create corresponding increase in the revenues? If that is not the case, it could probably cause financial difficulties. Hence, the next question is whether there exist some positive linear relationship between educational expenditures and revenues.
+ 
+### Problem 3: Is there a positive linear relationship between educational expenditures and revenues?
+ 
+To answer this problem, I first plot the data points in the three clusters in a graph whose horizontal axis is total education expenditures and vertical axis is total educational revenues. 
 
 ![](./P2_Problem3_01.png)
 
-From the first graph we can find two outliers. One is Comanche County, which is a rich region with extremely high household income. The other is Tulsa County, which has a normal household income but extremely high education expenditures. That may imply Tulsa County drags down the overall performance of Oklahoma.
- 
-The second one is of **the median household income of each counties in Oklahoma vs. the mean expenditure increase rate of each counties in Oklahoma**.
+We can notice a very good linear positive relationship among all data points. There is no difference among all three clusters. It is indeed a good sign. I additionally perform a ordinary least square estimation as below.
 
 ![](./P2_Problem3_02.png)
 
-From the second graph we can notice that except Tulsa County, Creek County, Cleveland County, Seminole County and Coal County all have very high average annual increase rate of education expenditures, but still stay on a kind of median level of household income. Are they the origins which drag down the performance of the whole state? The answer is no, because after removing these five counties, the graph change into this:
+It is a fantastic result. The R-squared value is 0.999 which means it is very probable that there exists a linear relationship. The coefficient of the total expenditures is 0.9555 suggesting a positive relationship. I additionally draw some diagnostic plots as follows.
 
 ![](./P2_Problem3_03.png)
 
-It is very surprising that the trend of the whole state is a negative relationship between these two variables, which means the more a county increases its educational expenditure, the less the household income in the end. This trend is completely opposite to the one in the state level across America. That means not the five counties specified above, but the whole state experiences something. 
- 
-After a short research on Oklahoma, I start to understand a little bit. Oklahoma is a state of agriculture. The most probable reason causing the above phenomenon could be people's leaving. The higher a person's academic degree is, the more eager he or she wants to leave Oklahoma and move into a big city. Most high academic degrees are more useful in a big city in modern society. People can find more suitable and well-paid jobs in big cities more efficiently.
- 
-## Challenges
-1. Initially, it is hard to join the two datasets on the county level because there is only a "school_district" field in the U.S. Educational Finances dataset. What I do is to print out the names of the school districts and try to observe some patterns. Finally I find that it is mostly regularly named, which makes it possible to do the join.
-2. It is also challenging to construct a MapReduce job for the county-level join. It is impossible to use any join method to directly realize the goal because the keys are totally different. Hence, I do a cross join first to combine the two RDDs into one and then apply the RDD.map() function to do the reducing part.
-3. There are also some challenges in the visualization part. I find it hard to add annotations to the outliers of each graph. I use seaborn to plot the graph but I need to use pyplot to add annotations, which totally messes up the coordinates. I have to try some values by myself to find the right places to add annotations.
- 
-## Limitation
-1. The household income data is not a full one, thus it does not include all the income data of all counties.
-2. There is bias introduced by the matching techniques of the counties and the school districts of a given state. Though the matching techniques work for most of the school districts, there are still some of them whose names do not contain any county's name.
-3. School districts vary from 1992 to 2016, so there may exist some inconsistency when joining the datasets on the county level.
- 
-## Conclusion
-The project finds out there in general exists a positive relationship between the household income of people and the education expenditures of the government. The exact quantities of education expenditures of each state are similar and there is a regression line with small but positive slope indicating that states with high household income have a small tendency to invest more on education. Besides, there are three states California, New York and Texas that invest a lot more on education than other states. 
- 
-In terms of the average annual increase rate of education expenditures, the positive relationship between the household income and that is much clearer. That means the more a state increases its educational expenditure, the more the household income in the end. However, there are five states Georgia, Kentucky, Oklahoma, Mississippi and Arkansas that have a high average annual increase rate but stay on a low household income level.
- 
-Taking Oklahoma as an example, the relationship between the household income and the average annual increase rate of education expenditures is negative in all the counties except the rich Comanche County. That may be probably caused by people leaving with a high educational degree. Because Oklahoma is a state of agriculture, people who get better education are more reasonable to leave for big cities to maximize their skills.
+All the diagnostic plots are perfect. The fitted values and actual values are close. The residuals are basically random among the independent values. The points on the partial regression plot and CCPR plot fit to the line.
+
+Hence, we can say there exists a strong linear positive relationship betwenn educational expenditures and revenues. The states in cluster 0 can invest more money and proabably receive more revenues back. As long as most of these revenues can be kept in the local counties, we can expect a household income increase after several years.
+
 
