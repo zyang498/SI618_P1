@@ -87,22 +87,26 @@ Here is a simple flowchart which shows the data manipulation process in the proj
 ## Analysis and Results
 
 ### Problem 1: Are there any meaningful clusters among the states with different educational expenditures and household income?
-To answer this question, I want to perform a K means clustering algorithm. To do that, I first need to decide how many clusters I would use. I use the 
-```sql
-select * from incomeByState as a inner join eduByState2016 as b on a.state = b.STATE
-```
-As a result, I draw a graph of **the total expenditures in 2016 of each state vs. the median household income of each state**.
+To answer this question, I want to perform a K means clustering algorithm. To do that, I first need to decide how many clusters I would use. I use the Elbow Method and the Silhouette Method. In the Silhouette Method, the average silhouette reaches its maximum when the number of clusters is 3. 
 
 ![](./P2_Problem1_01.png)
 
-From the above figure we can notice that there is a small but clear positive trend between these two variables. That means generally, we can say that higher household income results in higher educational expenditure. Besides, there are several outliers, like California, New York and Texas, which invest much more capital on education compared to other states. None of the three states, however, is in the highest income level. Though these three states "pull up" the overall regression line, we can still observe a slight positive relationship between these two variables.
+Also in the Elbow Method, after $k=3$ the decrease rate of within-cluster sum of squares drops significantly. 
 
 ![](./P2_Problem1_02.png)
 
+Hence, I choose 3 clusters for the K means algorithm and perform it on the graph of **the median household income of all the counties of each state vs. the mean expenditure increase rate of each state** drawn in the part 1 of the project. The graph basically shows the normalized relationship between how much each state pays attention to education expenditure from 1992 to 2016 and the median household income of each state in 2015. Please refer to the report of part 1 for more details. 
+
 ![](./P2_Problem1_03.png)
 
-### Problem 2: Does higher education investment in each state result in higher household income?
-To answer this question, I need to find the annual increase rate of the education expenditure of each state. Because different states have different populations, social environments and historical conditions, it is not meaningful to compare the exact quantity of their education expenditures. Hence, I compute the average annual increase rate of the education expenditure of each state as stated in the **Data Manipulation** section (detailed code is also included there). I first compute the annual increase rates of each state in each year between 1993 and 2016 and then take the average of them. The statistic can be a normalized measurement of the expenditure investment of each state. Because the household income is the average income from 2011 to 2015, it is valuable to monitor the statistics from 1993 to 2016--starting from about 20 years before 2011 and ending in about 2015. 20 years is also the length of time a person needs to grow up and finally obtain a bachelor degree. I plot a graph of **the median household income of all the counties of each state vs. the mean expenditure increase rate of each state**.
+From the above figure we can notice that K means algorithm clusters the data basically based on the vertical axis, i.e. the mean median household income. States in cluster 1 have generally the highest household income. We can notice that they mostly have high mean expenditure increase rate. States in cluster 2 have relatively lower household income and lower mean expenditure increase rate. States in cluster 0 basically follow the same trend. After clustering, we can clearly find that the structure of these data points presents in a inverted triangle form, which suggests that if a state has high household income, it must have high expenditure increase rate; but if a state has high expenditure increase rate, it is not necessary to have high household income. It is very interesting to find such pattern. One probable cause of that may be that although states in cluster 0 make similar amount of efforts to invest in education, they spend the moneny on something different, or even something wrong. Hence, the next interesting question is what is the differences between the detailed educational expenditures among these three clusters.
+
+
+
+
+
+### Problem 2: What is the differences between the detailed educational expenditures among these three clusters?
+To answer this question, I can depend on the 11 features provided in the US Educational Finances dataset, including the total educational expenditure, total educational revenue, number of students enrolled, etc. To reduce the dimension, I perform a PCA on these features and try to extract siginificant ones. The weight of 
 
 ![](./P2_Problem2_01.png)
 
