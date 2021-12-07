@@ -9,7 +9,7 @@ SI 618, Project 1 - Part 2
 
 
 ## Motivation
-This part of the project is the additional exploratory analysis of the previous analysis of part 1 on the relationship between educational expenditure and household income in the US. In part 1, I found that a generally high increase rate in education expenditures would result in high household income for each state [[1]](#1).. However, there are states making efforts on increasing their education investment year by years but yet having relatively low household income. In this part of the project, I would like to figure out what exactly these states are, what differences between them and those states with high household income in terms of detailed investment features and try to provide some suggestions for them to increase household income. It is important to make sure that government investment efficiently makes positive changes to people's livelihood. It is depressing if the government actually invests money but people's lives don't change a lot. In terms of educational expenditures, if some states can invest money to increase people's income, then other states can do it similarly. Fortunately, by exploring some detailed investment features provided by the US Educational Finances dataset, we can realize this purpose.
+This part of the project is the additional exploratory analysis of the previous analysis of part 1 on the relationship between educational expenditure and household income in the US. In part 1, I found that a generally high increase rate in education expenditures would result in high household income for each state [[1]](#1). However, there are states making efforts on increasing their education investment year by years but yet having relatively low household income. In this part of the project, I would like to figure out what exactly these states are, what differences between them and those states with high household income in terms of detailed investment features and try to provide some suggestions for them to increase household income. It is important to make sure that government investment efficiently makes positive changes to people's livelihood. It is depressing if the government actually invests money but people's lives don't change a lot. In terms of educational expenditures, if some states can invest money to increase people's income, then other states can do it similarly. Fortunately, by exploring some detailed investment features provided by the US Educational Finances dataset, we can realize this purpose.
 
 This part of project mainly seeks to research on the following three questions:
 1. Are there any meaningful clusters among the states with different educational expenditure increase rate and household income?
@@ -39,7 +39,7 @@ The second dataset contains the statistics (including mean, median,standard devi
 ## Methods
 
 ### Problem 1: Are there any meaningful clusters among the states with different educational expenditure increase rate and household income?
-For this question, I use the manipulated data from part 1 of the project, which join the household income together with the annual increase rate of educational expenditures from 1992 to 2016 of each state. I use SparkSQL to do a left join and then compute the annual increase rate. Please refer to the Problem 2 of my part 1 report for details [[1]](#1)..
+For this question, I use the manipulated data from part 1 of the project, which join the household income together with the annual increase rate of educational expenditures from 1992 to 2016 of each state. I use SparkSQL to do a left join and then compute the annual increase rate. Please refer to the Problem 2 of my part 1 report for details [[1]](#1).
 
 ### Problem 2: What are the differences between the detailed educational expenditures among these clusters?
 I only need to use the US Educational Finances dataset for this problem so there is no dataset join needed. There are NaN values in 1992 in the US Educational Finances dataset. Hence, I remove all of the NaN values by the ```df.dropna()``` function and the resulting dataset contains the data from 1993 to 2016. I then compute the medians of each feature of each state among these years and use them as average descriptions of the features. The reason why I use medians instead of means is that I want to eliminate the effect of extremely large or small values. As for noisy data, because these data are about each state, I think they are all valuable and none of the states should be regarded as "noisy" data. It is somehow challenging to copy the clusters in Problem 1 and use them here. I do an additional dataframe join using the ```df.join``` function to copy the clusters computed in Problem 1 to the dataset in Problem 2. I join them using states as keys.
@@ -58,7 +58,7 @@ Also in the Elbow Method, after k=3 the decrease rate of within-cluster sum of s
 
 ![](./P2_Problem1_01.png)
 
-Hence, I choose 3 clusters for the K means algorithm and perform it on the graph of **the median household income of all the counties of each state vs. the mean expenditure increase rate of each state** drawn in the part 1 of the project [[1]](#1).. The graph basically shows the normalized relationship between how much each state pays attention to education expenditure from 1992 to 2016 and the median household income of each state in 2015. Please refer to the report of part 1 for more details [[1]](#1).. 
+Hence, I choose 3 clusters for the K means algorithm and perform it on the graph of **the median household income of all the counties of each state vs. the mean expenditure increase rate of each state** drawn in the part 1 of the project [[1]](#1). The graph basically shows the normalized relationship between how much each state pays attention to education expenditure from 1992 to 2016 and the median household income of each state in 2015. Please refer to the report of part 1 for more details [[1]](#1). 
 
 ![](./P2_Problem1_03.png)
 
@@ -113,6 +113,6 @@ Hence, we can say there exists a strong linear positive relationship between edu
 
 ## References
 <a id="1">[1]</a> 
-Zhe Yang
-Relationship between Educational Expenditure and Household Income in the US
+Zhe Yang,
+"Relationship between Educational Expenditure and Household Income in the US",
 https://github.com/zyang498/SI618_P1
